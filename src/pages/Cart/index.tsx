@@ -17,29 +17,57 @@ interface Product {
   amount: number;
 }
 
+interface cartProduct {
+  details: Product;
+  priceFormatted: string;
+}
+
 const Cart = (): JSX.Element => {
   const { cart, removeProduct, updateProductAmount } = useCart();
 
-  // const cartFormatted = cart.map(product => ({
-  //   // TODO
-  // }))
-  // const total =
-  //   formatPrice(
-  //     cart.reduce((sumTotal, product) => {
-  //       // TODO
-  //     }, 0)
-  //   )
+  const cartFormatted = cart.reduce((products, product) => {
+    const productIndex = products.findIndex(
+      (innerProduct) => innerProduct.details.id === product.id
+    );
+
+    if (productIndex === -1) {
+      return products.concat({
+        details: { ...product, amount: 1 },
+        priceFormatted: formatPrice(product.price),
+      });
+    }
+
+    products[productIndex].details.amount++;
+
+    return products;
+  }, [] as cartProduct[]);
+
+  const total = formatPrice(
+    cart.reduce((sumTotal, product) => {
+      // TODO
+      return sumTotal + product.price;
+    }, 0)
+  );
 
   function handleProductIncrement(product: Product) {
     // TODO
+    updateProductAmount({
+      productId: product.id,
+      amount: product.amount + 1,
+    });
   }
 
   function handleProductDecrement(product: Product) {
     // TODO
+    updateProductAmount({
+      productId: product.id,
+      amount: product.amount - 1,
+    });
   }
 
   function handleRemoveProduct(productId: number) {
     // TODO
+    removeProduct(productId);
   }
 
   return (
@@ -55,25 +83,22 @@ const Cart = (): JSX.Element => {
           </tr>
         </thead>
         <tbody>
-          {cart.map((product) => (
-            <tr data-testid="product">
+          {cartFormatted.map((product) => (
+            <tr key={product.details.id} data-testid="product">
               <td>
-                <img
-                  src="https://rocketseat-cdn.s3-sa-east-1.amazonaws.com/modulo-redux/tenis1.jpg"
-                  alt="Tênis de Caminhada Leve Confortável"
-                />
+                <img src={product.details.image} alt={product.details.title} />
               </td>
               <td>
-                <strong>Tênis de Caminhada Leve Confortável</strong>
-                <span>R$ 179,90</span>
+                <strong>{product.details.title}</strong>
+                <span>{product.priceFormatted}</span>
               </td>
               <td>
                 <div>
                   <button
                     type="button"
                     data-testid="decrement-product"
-                    // disabled={product.amount <= 1}
-                    // onClick={() => handleProductDecrement()}
+                    disabled={product.details.amount <= 1}
+                    onClick={() => handleProductDecrement(product.details)}
                   >
                     <MdRemoveCircleOutline size={20} />
                   </button>
@@ -81,25 +106,27 @@ const Cart = (): JSX.Element => {
                     type="text"
                     data-testid="product-amount"
                     readOnly
-                    value={2}
+                    value={product.details.amount}
                   />
                   <button
                     type="button"
                     data-testid="increment-product"
-                    // onClick={() => handleProductIncrement()}
+                    onClick={() => handleProductIncrement(product.details)}
                   >
                     <MdAddCircleOutline size={20} />
                   </button>
                 </div>
               </td>
               <td>
-                <strong>R$ 359,80</strong>
+                <strong>
+                  {formatPrice(product.details.amount * product.details.price)}
+                </strong>
               </td>
               <td>
                 <button
                   type="button"
                   data-testid="remove-product"
-                  // onClick={() => handleRemoveProduct(product.id)}
+                  // onClick={() => handleRemoveProduct(product.details)}
                 >
                   <MdDelete size={20} />
                 </button>
@@ -114,7 +141,7 @@ const Cart = (): JSX.Element => {
 
         <Total>
           <span>TOTAL</span>
-          <strong>R$ 359,80</strong>
+          <strong>{total}</strong>
         </Total>
       </footer>
     </Container>
